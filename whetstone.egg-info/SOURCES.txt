@@ -1,0 +1,9 @@
+README.md
+pyproject.toml
+setup.py
+whetstone/__init__.py
+whetstone.egg-info/PKG-INFO
+whetstone.egg-info/SOURCES.txt
+whetstone.egg-info/dependency_links.txt
+whetstone.egg-info/requires.txt
+whetstone.egg-info/top_level.txt
