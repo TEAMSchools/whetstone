@@ -1,3 +1,4 @@
+#!/python3.6
 __version__ = '0.1.0'
 
 from datetime import datetime
@@ -157,12 +158,21 @@ class Whetstone:
         )
         return response
 
-    def put(self, schema, record_id, body=None, session_type='frontend'):
+    def put(self, schema, record_id, body=None, session_type='client'):
         path = f'{schema}/{record_id}'
         response = self._request(
             method='PUT',
             session_type=session_type,
             path=path,
             body=body
+        )
+        return response
+
+    def delete(self, schema, record_id, session_type='client'):
+        path = f'{schema}/{record_id}'
+        response = self._request(
+            method='DELETE',
+            session_type=session_type,
+            path=path,
         )
         return response
