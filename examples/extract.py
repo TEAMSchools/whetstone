@@ -60,23 +60,3 @@ for e in endpoints:
         with gzip.open(data_file, "wt", encoding="utf-8") as f:
             json.dump(data, f)
         print(f"\tSaved to {'/'.join(data_file.parts[-4:])}!")
-
-# run again for archived data
-for e in endpoints:
-    print(e, "- archived")
-    e_clean = e.replace("generic-tags/", "")
-    data_path = PROJECT_PATH / "data" / e_clean
-    if not data_path.exists():
-        data_path.mkdir(parents=True)
-        print(f"\tCreated {'/'.join(data_path.parts[-3:])}...")
-
-    r = ws.get(e, params={"archived": True})
-    count = r.get("count")
-    print(f"\tFound {count} records...")
-    if count > 0:
-        data = r.get("data")
-
-        data_file = data_path / f"{e_clean}_archived.json.gz"
-        with gzip.open(data_file, "wt", encoding="utf-8") as f:
-            json.dump(data, f)
-        print(f"\tSaved to {'/'.join(data_file.parts[-4:])}!")
