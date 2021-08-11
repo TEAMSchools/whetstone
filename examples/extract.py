@@ -41,7 +41,7 @@ endpoints = generic_tags_endpoints + endpoints
 for e in endpoints:
     print(e)
     e_clean = e.replace("generic-tags/", "")
-    
+
     # create save foldre if it doesn't exist
     data_path = PROJECT_PATH / "data" / e_clean
     if not data_path.exists():
@@ -52,7 +52,7 @@ for e in endpoints:
     r = ws.get(e)
     count = r.get("count")
     print(f"\tFound {count} records...")
-    
+
     # if records returned save to compressed json file
     if count > 0:
         data = r.get("data")

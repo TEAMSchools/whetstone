@@ -1,14 +1,15 @@
 [tool.poetry]
 name = "whetstone"
-version = "0.3.0"
+version = "0.3.1"
 description = ""
 authors = ["Charlie Bini <cbini@kippnj.org>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.6.2"
 requests = "^2.24.0"
 requests_oauthlib = "^1.3.0"
 oauthlib = "^3.1.0"
+black = "^21.7-beta.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
