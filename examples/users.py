@@ -114,7 +114,10 @@ for u in merge_users:
         # build update payload
         update_payload = dict(
             coach=coach_id,
-            defaultInformation=dict(gradeLevel=grade_id, course=course_id,),
+            defaultInformation=dict(
+                gradeLevel=grade_id,
+                course=course_id,
+            ),
             internalId=u["user_internal_id"],
         )
         # update user with accounting ID
@@ -127,7 +130,9 @@ for u in merge_users:
             email=u["user_email"],
             coach=coach_id,
             defaultInformation=dict(
-                school=school_id, gradeLevel=grade_id, course=course_id,
+                school=school_id,
+                gradeLevel=grade_id,
+                course=course_id,
             ),
             inactive=u["inactive"],
         )
@@ -175,7 +180,10 @@ for u in merge_users:
         # if not a member of group, add via frontend
         if u["inactive"] == False and not group_membership_match:
             update_query = dict(
-                userId=user_id, roleId=role_id, schoolId=school_id, groupId=group_id,
+                userId=user_id,
+                roleId=role_id,
+                schoolId=school_id,
+                groupId=group_id,
             )
             ws.post("school-roles", params=update_query, session_type="frontend")
             print(f"\tAdded to {u['group_name']} as {role_match['name']}")
