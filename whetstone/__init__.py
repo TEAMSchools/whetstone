@@ -1,4 +1,4 @@
-__version__ = "0.3.2"
+__version__ = "0.4.0"
 
 from datetime import datetime
 
@@ -155,10 +155,10 @@ class Whetstone:
         )
         return response
 
-    def put(self, schema, record_id, body=None, session_type="client"):
+    def put(self, schema, record_id, params={}, body=None, session_type="client"):
         path = f"{schema}/{record_id}"
         response = self._request(
-            method="PUT", session_type=session_type, path=path, body=body
+            method="PUT", session_type=session_type, path=path, params=params, body=body
         )
         return response
 
