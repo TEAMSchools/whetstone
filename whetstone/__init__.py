@@ -34,13 +34,13 @@ class Whetstone:
             response = session.request(method=method, url=url, params=params, json=body)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.HTTPError as xc:
             response_json = response.json()
             print(
                 f"{response_json['name']} {response_json['code']}\n{response_json['message']}"
             )
-            print(e)
-            raise e
+            print(xc)
+            raise xc
 
     def authorize_client(self, **kwargs):
         """ """
@@ -64,7 +64,6 @@ class Whetstone:
         # check for client credentials (tuple)
         if isinstance(client_credentials, tuple):
             client_id, client_secret = client_credentials
-            print("Fetching new access token...")
             client = BackendApplicationClient(client_id=client_id)
             oauth = OAuth2Session(client=client)
             token = oauth.fetch_token(
@@ -84,7 +83,6 @@ class Whetstone:
             )
 
     def authorize_frontend(self, district_id, username, password):
-        print("Fetching new access token...")
         payload = {
             "username": username,
             "password": password,
@@ -137,11 +135,13 @@ class Whetstone:
                     path=schema,
                     params=default_params,
                 )
+                
                 data = response.get("data")
-                all_data.extend(data)
-                default_params["skip"] += default_params["limit"]
                 if not data:
                     break
+                else:
+                    all_data.extend(data)
+                    default_params["skip"] += default_params["limit"]
             response.update({"data": all_data})
             return response
 
