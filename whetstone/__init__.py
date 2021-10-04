@@ -21,7 +21,7 @@ class Whetstone:
             }
         )
 
-    def _request(self, session_type, method, path, params={}, body=None):
+    def _request(self, method, path, session_type="client", params={}, body=None):
         """ """
         if session_type == "client":
             url = f"{self.base_url}/external/{path}"
@@ -35,12 +35,37 @@ class Whetstone:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as xc:
+            print(xc)
             response_json = response.json()
             print(
                 f"{response_json['name']} {response_json['code']}\n{response_json['message']}"
             )
-            print(xc)
             raise xc
+
+    def _authorize_access_token(self, access_token):
+        """
+        check if access token is still valid
+        """
+        expires_at = datetime.fromtimestamp(access_token.get("expires_at"))
+        now = datetime.now()
+        if expires_at > now:
+            return access_token
+        else:
+            raise Exception("Access token expired!")
+
+    def _authorize_credentials(self, credentials):
+        if isinstance(credentials, tuple):
+            client_id, client_secret = credentials
+
+            client = BackendApplicationClient(client_id=client_id)
+            oauth = OAuth2Session(client=client)
+            return oauth.fetch_token(
+                token_url=f"{self.base_url}/auth/client/token",
+                client_id=client_id,
+                client_secret=client_secret,
+            )
+        else:
+            return Exception("You must provide a valid credentials tuple!")
 
     def authorize_client(self, **kwargs):
         """ """
@@ -49,38 +74,19 @@ class Whetstone:
 
         # check if access token supplied
         if access_token:
-            # check if access token is still valid
-            expires_at = datetime.fromtimestamp(access_token.get("expires_at"))
-            now = datetime.now()
-            if expires_at > now:
-                self.access_token = access_token
-                self.client_session.headers[
-                    "Authorization"
-                ] = f"Bearer {access_token.get('access_token')}"
-                return "Authorized!"
-            else:
-                return "Access token expired!"
-
+            access_token = self._authorize_access_token(access_token=access_token)
         # check for client credentials (tuple)
-        if isinstance(client_credentials, tuple):
-            client_id, client_secret = client_credentials
-            client = BackendApplicationClient(client_id=client_id)
-            oauth = OAuth2Session(client=client)
-            token = oauth.fetch_token(
-                token_url=f"{self.base_url}/auth/client/token",
-                client_id=client_id,
-                client_secret=client_secret,
-            )
-            self.access_token = token
-            self.client_session.headers[
-                "Authorization"
-            ] = f"Bearer {token.get('access_token')}"
-            return "Authorized!"
+        elif client_credentials:
+            access_token = self._authorize_credentials(credentials=client_credentials)
         else:
-            # exit - prompt for credientials tuple
             raise Exception(
-                "You must provide a valid access token file or client credentials."
+                "You must provide a valid access token dict or credentials tuple!"
             )
+
+        self.access_token = access_token
+        self.client_session.headers[
+            "Authorization"
+        ] = f"Bearer {access_token.get('access_token')}"
 
     def authorize_frontend(self, district_id, username, password):
         payload = {
@@ -90,27 +96,28 @@ class Whetstone:
         }
         self.frontend_session.headers["district"] = district_id
         token = self._request(
-            session_type="frontend", method="POST", path="auth/token", body=payload
+            method="POST", path="auth/token", session_type="frontend", body=payload
         )
         self.frontend_access_token = token
-        self.frontend_session.headers.update(
-            {
-                "Accept": "application/json",
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {token.get('access_token')}",
-            }
-        )
-        return "Authorized!"
+        return
 
     def get(self, schema, record_id=None, params={}, session_type="client"):
         """ """
         default_params = {"limit": self.api_response_limit, "skip": 0}
         default_params.update(params)
 
-        if record_id:
+        if session_type == "frontend":
+            response = self._request(
+                method="GET",
+                path=schema,
+                session_type=session_type,
+                params=default_params,
+            )
+            return response
+        elif record_id:
             path = f"{schema}/{record_id}"
             response = self._request(
-                method="GET", session_type=session_type, path=path, params=params
+                method="GET", path=path, session_type=session_type, params=params
             )
             return {
                 "count": 1,
@@ -118,26 +125,18 @@ class Whetstone:
                 "skip": 0,
                 "data": [response],
             }
-        elif schema in ["generic-tags", "roles"] or session_type == "frontend":
-            response = self._request(
-                method="GET",
-                session_type=session_type,
-                path=schema,
-                params=default_params,
-            )
-            return response
         else:
             all_data = []
             while True:
                 response = self._request(
                     method="GET",
-                    session_type=session_type,
                     path=schema,
+                    session_type=session_type,
                     params=default_params,
                 )
-                
+
                 data = response.get("data")
-                if not data:
+                if len(all_data) >= response.get("count"):
                     break
                 else:
                     all_data.extend(data)
@@ -145,28 +144,24 @@ class Whetstone:
             response.update({"data": all_data})
             return response
 
-    def post(self, schema, params={}, body=None, session_type="client"):
+    def post(self, schema, params={}, body=None):
         response = self._request(
             method="POST",
-            session_type=session_type,
             path=schema,
             params=params,
             body=body,
         )
         return response
 
-    def put(self, schema, record_id, params={}, body=None, session_type="client"):
+    def put(self, schema, record_id, params={}, body=None):
         path = f"{schema}/{record_id}"
-        response = self._request(
-            method="PUT", session_type=session_type, path=path, params=params, body=body
-        )
+        response = self._request(method="PUT", path=path, params=params, body=body)
         return response
 
-    def delete(self, schema, record_id, session_type="client"):
+    def delete(self, schema, record_id):
         path = f"{schema}/{record_id}"
         response = self._request(
             method="DELETE",
-            session_type=session_type,
             path=path,
         )
         return response
