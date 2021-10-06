@@ -1,4 +1,4 @@
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 from datetime import datetime
 
@@ -33,14 +33,12 @@ class Whetstone:
         try:
             response = session.request(method=method, url=url, params=params, json=body)
             response.raise_for_status()
-            return response.json()
+            return response
         except requests.exceptions.HTTPError as xc:
-            print(xc)
-            response_json = response.json()
-            print(
-                f"{response_json['name']} {response_json['code']}\n{response_json['message']}"
-            )
-            raise xc
+            if response.status_code >= 500:
+                raise xc
+            else:
+                return response
 
     def _authorize_access_token(self, access_token):
         """
@@ -95,11 +93,16 @@ class Whetstone:
             "grant_type": "password",
         }
         self.frontend_session.headers["district"] = district_id
-        token = self._request(
+
+        response = self._request(
             method="POST", path="auth/token", session_type="frontend", body=payload
         )
-        self.frontend_access_token = token
-        return
+
+        if response.ok:
+            self.frontend_access_token = response.json()
+            return
+        else:
+            raise requests.exceptions.HTTPError(response.json())
 
     def get(self, schema, record_id=None, params={}, session_type="client"):
         """ """
@@ -113,18 +116,24 @@ class Whetstone:
                 session_type=session_type,
                 params=default_params,
             )
-            return response
+            if response.ok:
+                return response.json()
+            else:
+                raise requests.exceptions.HTTPError(response.json())
         elif record_id:
             path = f"{schema}/{record_id}"
             response = self._request(
                 method="GET", path=path, session_type=session_type, params=params
             )
-            return {
-                "count": 1,
-                "limit": self.api_response_limit,
-                "skip": 0,
-                "data": [response],
-            }
+            if response.ok:
+                return {
+                    "count": 1,
+                    "limit": self.api_response_limit,
+                    "skip": 0,
+                    "data": [response.json()],
+                }
+            else:
+                raise requests.exceptions.HTTPError(response.json())
         else:
             all_data = []
             while True:
@@ -135,14 +144,19 @@ class Whetstone:
                     params=default_params,
                 )
 
-                data = response.get("data")
-                if len(all_data) >= response.get("count"):
-                    break
+                if response.ok:
+                    response_json = response.json()
+                    data = response_json.get("data")
+                    if len(all_data) >= response_json.get("count"):
+                        break
+                    else:
+                        all_data.extend(data)
+                        default_params["skip"] += default_params["limit"]
                 else:
-                    all_data.extend(data)
-                    default_params["skip"] += default_params["limit"]
-            response.update({"data": all_data})
-            return response
+                    raise requests.exceptions.HTTPError(response.json())
+
+            response_json.update({"data": all_data})
+            return response_json
 
     def post(self, schema, params={}, body=None):
         response = self._request(
@@ -151,17 +165,29 @@ class Whetstone:
             params=params,
             body=body,
         )
-        return response
+
+        if response.ok:
+            return response.json()
+        else:
+            raise requests.exceptions.HTTPError(response.json())
 
     def put(self, schema, record_id, params={}, body=None):
-        path = f"{schema}/{record_id}"
-        response = self._request(method="PUT", path=path, params=params, body=body)
-        return response
+        response = self._request(
+            method="PUT", path=f"{schema}/{record_id}", params=params, body=body
+        )
+
+        if response.ok:
+            return response.json()
+        else:
+            raise requests.exceptions.HTTPError(response.json())
 
     def delete(self, schema, record_id):
-        path = f"{schema}/{record_id}"
         response = self._request(
             method="DELETE",
-            path=path,
+            path=f"{schema}/{record_id}",
         )
-        return response
+
+        if response.ok:
+            return response.json()
+        else:
+            raise requests.exceptions.HTTPError(response.json())
