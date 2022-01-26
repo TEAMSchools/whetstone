@@ -1,19 +1,31 @@
-[tool.poetry]
+[project]
 name = "whetstone"
-version = "0.4.2"
+version = "0.4.3"
 description = ""
-authors = ["Charlie Bini <cbini@kippnj.org>"]
+authors = [
+    {name = "Charlie Bini", email = "5003326+cbini@users.noreply.github.com"},
+]
+dependencies = [
+    "requests>=2.27.1",
+    "requests-oauthlib>=1.3.0",
+    "oauthlib>=3.1.1",
+]
+requires-python = ">=3.6.2"
+license = {text = "MIT"}
 
-[tool.poetry.dependencies]
-python = "^3.6.2"
-requests = "^2.24.0"
-requests_oauthlib = "^1.3.0"
-oauthlib = "^3.1.0"
+[project.urls]
+homepage = ""
 
-[tool.poetry.dev-dependencies]
-pytest = "^6.2"
-black = "^21.9b0"
+[project.optional-dependencies]
+[tool]
+[tool.pdm]
+[tool.pdm.dev-dependencies]
+dev = [
+    "black>=21.12b0",
+    "pytest>=6.2.5",
+    "flake8>=4.0.1",
+]
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["pdm-pep517"]
+build-backend = "pdm.pep517.api"

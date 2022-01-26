@@ -9,7 +9,7 @@ from requests_oauthlib import OAuth2Session
 
 class Whetstone:
     def __init__(self):
-        self.base_url = f"https://api.whetstoneeducation.com"
+        self.base_url = "https://api.whetstoneeducation.com"
         self.access_token = None
         self.api_response_limit = 100
         self.frontend_session = requests.Session()
@@ -147,10 +147,11 @@ class Whetstone:
                 if response.ok:
                     response_json = response.json()
                     data = response_json.get("data")
+                    all_data.extend(data)
+
                     if len(all_data) >= response_json.get("count"):
                         break
                     else:
-                        all_data.extend(data)
                         default_params["skip"] += default_params["limit"]
                 else:
                     raise requests.exceptions.HTTPError(response.json())
